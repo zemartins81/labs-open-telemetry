@@ -1,12 +1,5 @@
 version: '3.8'
 
-networks:
-  sistema-cep-network:
-    driver: bridge
-
-volumes:
-  zipkin-data:
-
 services:
   # Serviço A - Input e Validação de CEP (Porta 8080)
   servico-a:
@@ -168,3 +161,8 @@ services:
 volumes:
   grafana-data:
   redis-data:
+  zipkin-data:
+
+networks:
+  sistema-cep-network:
+    driver: bridge
