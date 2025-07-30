@@ -1,0 +1,117 @@
+# =============================================================================
+# Prometheus Configuration
+# Sistema de Temperatura por CEP
+# =============================================================================
+
+global:
+  # Intervalo padrão de scraping
+  scrape_interval: 15s
+  # Timeout para scraping
+  scrape_timeout: 10s
+  # Intervalo de avaliação de regras
+  evaluation_interval: 15s
+  # Labels externos adicionados a todas as métricas
+  external_labels:
+    monitor: 'sistema-cep-monitor'
+    environment: 'development'
+
+# Configuração de regras de alertas (opcional)
+rule_files:
+  # - "alert_rules.yml"
+
+# Configuração de Alertmanager (opcional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Configurações de scraping
+scrape_configs:
+  # Métricas do próprio Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Métricas do OTEL Collector
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8888']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    # Labels adicionais
+    labels:
+      service: 'otel-collector'
+      component: 'observability'
+
+  # Métricas do OTEL Collector (Prometheus exporter)
+  - job_name: 'otel-collector-prometheus'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    labels:
+      service: 'otel-collector'
+      component: 'prometheus-exporter'
+
+  # Métricas do Serviço A
+  - job_name: 'servico-a'
+    static_configs:
+      - targets: ['servico-a:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    # Configurações específicas
+    params:
+      format: ['prometheus']
+    labels:
+      service: 'servico-a'
+      component: 'input-service'
+    # Health check antes do scraping
+    # honor_labels: true
+
+  # Métricas do Serviço B
+  - job_name: 'servico-b'
+    static_configs:
+      - targets: ['servico-b:8081']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    labels:
+      service: 'servico-b'
+      component: 'orchestration-service'
+
+  # Métricas do Zipkin
+  - job_name: 'zipkin'
+    static_configs:
+      - targets: ['zipkin:9411']
+    scrape_interval: 30s
+    metrics_path: /actuator/prometheus
+    # Zipkin pode não ter métricas Prometheus por padrão
+    scrape_timeout: 5s
+    labels:
+      service: 'zipkin'
+      component: 'tracing'
+
+  # Métricas do Redis (se habilitado)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    labels:
+      service: 'redis'
+      component: 'cache'
+    # Redis precisa de um exporter específico
+    # Este job pode falhar se o Redis exporter não estiver configurado
+
+# Configurações de storage local
+storage:
+  tsdb:
+    # Retenção de dados
+    retention.time: 15d
+    # Tamanho máximo da base de dados
+    retention.size: 10GB
+    # Compactação
+    min-block-duration: 2h
+    max-block-duration: 25h
