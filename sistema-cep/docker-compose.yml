@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Serviço A - Input e Validação de CEP (Porta 8080)
   servico-a:
     build:
       context: ./servico-a
@@ -29,7 +28,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Serviço B - Orquestração de APIs (Porta 8081)
   servico-b:
     build:
       context: ./servico-b
@@ -57,111 +55,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # OpenTelemetry Collector
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.89.0
-    container_name: sistema-cep-otel-collector
-    command: ["--config=/etc/otel-collector-config.yml"]
-    volumes:
-      - ./configs/otel-collector.yml:/etc/otel-collector-config.yml
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-      - "8888:8888"   # Prometheus metrics
-      - "8889:8889"   # Prometheus exporter metrics
-    depends_on:
-      - zipkin
-    networks:
-      - sistema-cep-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # Zipkin - Interface de Tracing
-  zipkin:
-    image: openzipkin/zipkin:2.24
-    container_name: sistema-cep-zipkin
-    ports:
-      - "9411:9411"
-    environment:
-      - STORAGE_TYPE=mem
-      - JAVA_OPTS=-Xms512m -Xmx512m
-    volumes:
-      - zipkin-data:/zipkin/data
-    networks:
-      - sistema-cep-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9411/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # Prometheus (Opcional - para métricas)
-  prometheus:
-    image: prom/prometheus:v2.47.2
-    container_name: sistema-cep-prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    volumes:
-      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - sistema-cep-network
-    restart: unless-stopped
-    profiles:
-      - monitoring
-
-  # Grafana (Opcional - para visualização de métricas)
-  grafana:
-    image: grafana/grafana:10.2.0
-    container_name: sistema-cep-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./configs/grafana/provisioning:/etc/grafana/provisioning
-    networks:
-      - sistema-cep-network
-    restart: unless-stopped
-    profiles:
-      - monitoring
-
-  # Redis (Opcional - para cache)
-  redis:
-    image: redis:7.2-alpine
-    container_name: sistema-cep-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    networks:
-      - sistema-cep-network
-    restart: unless-stopped
-    profiles:
-      - cache
-
-volumes:
-  grafana-data:
-  redis-data:
-  zipkin-data:
 
 networks:
   sistema-cep-network:
