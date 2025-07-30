@@ -24,6 +24,7 @@ vendor/
 # Arquivos de ambiente
 .env.local
 .env.production
+.env
 
 # Logs
 *.log
