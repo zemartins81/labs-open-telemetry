@@ -1,5 +1,4 @@
 package validators
-package validators
 
 import "testing"
 
