@@ -1,46 +1,29 @@
 package config
 
-import (
-	"log"
+import "os"
 
-	"servico-b/internal/config"
-	"servico-b/internal/handlers"
-	"servico-b/internal/server"
-	"servico-b/internal/services"
-)
+// Config representa a configuração da aplicação
+type Config struct {
+	Port           string
+	WeatherAPIKey  string
+	ViaCEPURL      string
+	WeatherAPIURL  string
+}
 
-func main() {
-	// Carrega configuração
-	cfg := config.LoadConfig()
-
-	// Valida configuração crítica
-	if cfg.WeatherAPIKey == "" {
-		log.Fatal("WEATHER_API_KEY é obrigatória. Obtenha uma chave em https://www.weatherapi.com/")
-	}
-
-	// Inicializa serviços
-	viaCEPService := services.NewViaCEPService()
-	weatherService := services.NewWeatherService(cfg.WeatherAPIKey)
-	temperatureService := services.NewTemperatureService(viaCEPService, weatherService)
-
-	// Inicializa handlers
-	temperatureHandler := handlers.NewTemperatureHandler(temperatureService)
-
-	// Inicializa servidor
-	srv := server.NewServer(cfg.Port, temperatureHandler)
-
-	log.Printf("Serviço B iniciado na porta %s", cfg.Port)
-	log.Printf("Usando WeatherAPI com chave: %s...", cfg.WeatherAPIKey[:min(len(cfg.WeatherAPIKey), 8)])
-
-	// Inicia o servidor
-	if err := srv.Start(); err != nil {
-		log.Fatal("Erro ao iniciar servidor:", err)
+// LoadConfig carrega as configurações a partir das variáveis de ambiente
+func LoadConfig() *Config {
+	return &Config{
+		Port:           getEnv("PORT", "8081"),
+		WeatherAPIKey:  getEnv("WEATHER_API_KEY", ""),
+		ViaCEPURL:      getEnv("VIACEP_URL", "https://viacep.com.br/ws"),
+		WeatherAPIURL:  getEnv("WEATHER_API_URL", "http://api.weatherapi.com/v1"),
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+// getEnv retorna o valor da variável de ambiente ou um valor padrão
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-	return b
+	return defaultValue
 }

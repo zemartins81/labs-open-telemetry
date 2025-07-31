@@ -2,9 +2,10 @@ package main
 
 import (
 	"log"
-
-	"github.com/go-delve/delve/pkg/config"
-	"github.com/jesseduffield/go-git/v5/plumbing/transport/server"
+	"servico-a/internal/config"
+	"servico-a/internal/handlers"
+	"servico-a/internal/server"
+	"servico-a/internal/services"
 )
 
 func main() {
