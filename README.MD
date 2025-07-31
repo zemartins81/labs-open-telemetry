@@ -1,51 +1,293 @@
-Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e retorna o clima atual (temperatura em graus celsius, fahrenheit e kelvin) juntamente com a cidade. Esse sistema deverá implementar OTEL(Open Telemetry) e Zipkin.
+# Sistema de Temperatura por CEP
 
-Basedo no cenário conhecido "Sistema de temperatura por CEP" denominado Serviço B, será incluso um novo projeto, denominado Serviço A.
+Sistema distribuído em Go composto por dois microserviços que fornecem informações de temperatura baseadas em CEP brasileiro.
 
+## 📋 Visão Geral
 
-Requisitos - Serviço A (responsável pelo input):
+- **Serviço A**: Recebe e valida CEPs, encaminha para o Serviço B
+- **Serviço B**: Busca localização (ViaCEP) e temperatura (WeatherAPI)
 
-O sistema deve receber um input de 8 dígitos via POST, através do schema:  { "cep": "29902555" }
-O sistema deve validar se o input é valido (contem 8 dígitos) e é uma STRING
-Caso seja válido, será encaminhado para o Serviço B via HTTP
-Caso não seja válido, deve retornar:
-Código HTTP: 422
-Mensagem: invalid zipcode
+## 🏗️ Arquitetura
 
+```
+┌─────────────┐    HTTP POST     ┌─────────────┐
+│             │   /{cep}         │             │
+│  Serviço A  ├─────────────────▶│  Serviço B  │
+│   (8080)    │                  │   (8081)    │
+│             │                  │             │
+└─────────────┘                  └──────┬──────┘
+                                        │
+                              ┌─────────▼─────────┐
+                              │                   │
+                              │   APIs Externas   │
+                              │                   │
+                              │ ViaCEP + Weather  │
+                              └───────────────────┘
+```
 
-Requisitos - Serviço B (responsável pela orquestração):
+## 🚀 Início Rápido
 
-O sistema deve receber um CEP válido de 8 digitos
-O sistema deve realizar a pesquisa do CEP e encontrar o nome da localização, a partir disso, deverá retornar as temperaturas e formata-lás em: Celsius, Fahrenheit, Kelvin juntamente com o nome da localização.
-O sistema deve responder adequadamente nos seguintes cenários:
-Em caso de sucesso:
-Código HTTP: 200
-Response Body: { "city: "São Paulo", "temp_C": 28.5, "temp_F": 28.5, "temp_K": 28.5 }
-Em caso de falha, caso o CEP não seja válido (com formato correto):
-Código HTTP: 422
-Mensagem: invalid zipcode
-Em caso de falha, caso o CEP não seja encontrado:
-Código HTTP: 404
-Mensagem: can not find zipcode
-Após a implementação dos serviços, adicione a implementação do OTEL + Zipkin:
+### Pré-requisitos
 
-Implementar tracing distribuído entre Serviço A - Serviço B
-Utilizar span para medir o tempo de resposta do serviço de busca de CEP e busca de temperatura
-Dicas:
+1. **Go 1.21+** (para desenvolvimento local)
+2. **Docker & Docker Compose** (recomendado)
+3. **Chave WeatherAPI** (gratuita)
 
-Utilize a API viaCEP (ou similar) para encontrar a localização que deseja consultar a temperatura: https://viacep.com.br/
-Utilize a API WeatherAPI (ou similar) para consultar as temperaturas desejadas: https://www.weatherapi.com/
-Para realizar a conversão de Celsius para Fahrenheit, utilize a seguinte fórmula: F = C * 1,8 + 32
-Para realizar a conversão de Celsius para Kelvin, utilize a seguinte fórmula: K = C + 273
-Sendo F = Fahrenheit
-Sendo C = Celsius
-Sendo K = Kelvin
-Para dúvidas da implementação do OTEL, você pode clicar aqui
-Para implementação de spans, você pode clicar aqui
-Você precisará utilizar um serviço de collector do OTEL
-Para mais informações sobre Zipkin, você pode clicar aqui
-Entrega:
+### 1. Obter Chave da WeatherAPI
 
-O código-fonte completo da implementação.
-Documentação explicando como rodar o projeto em ambiente dev.
-Utilize docker/docker-compose para que possamos realizar os testes de sua aplicação.
+1. Acesse [WeatherAPI.com](https://www.weatherapi.com/)
+2. Crie uma conta gratuita
+3. Vá em "My Account" → "API Keys"
+4. Copie sua chave
+
+### 2. Configurar Ambiente
+
+```bash
+# Clone ou configure os arquivos
+cp .env.example .env
+
+# Edite o arquivo .env e adicione sua chave
+WEATHER_API_KEY=sua_chave_aqui
+```
+
+### 3. Executar com Docker Compose
+
+```bash
+# Subir todos os serviços
+docker-compose up --build
+
+# Em background
+docker-compose up --build -d
+```
+
+### 4. Testar o Sistema
+
+```bash
+# Teste com CEP válido (Av. Paulista - São Paulo)
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{"cep": "01310100"}'
+
+# Resposta esperada:
+# {
+#   "city": "São Paulo",
+#   "temp_C": 23.5,
+#   "temp_F": 74.3,
+#   "temp_K": 296.65
+# }
+```
+
+## 📁 Estrutura do Projeto
+
+```
+sistema-temperatura-cep/
+├── servico-a/                  # Microserviço A (validação e roteamento)
+│   ├── cmd/main.go
+│   ├── internal/
+│   ├── Dockerfile
+│   ├── Makefile
+│   └── README.md
+├── servico-b/                  # Microserviço B (orquestração de APIs)
+│   ├── cmd/main.go
+│   ├── internal/
+│   ├── Dockerfile
+│   ├── Makefile
+│   └── README.md
+├── docker-compose.yml          # Orquestração dos serviços
+├── .env.example               # Exemplo de configuração
+└── README.md                  # Esta documentação
+```
+
+## 🔧 Desenvolvimento Local
+
+### Executar Serviços Individualmente
+
+```bash
+# Terminal 1 - Serviço B
+cd servico-b
+WEATHER_API_KEY=sua_chave make run
+
+# Terminal 2 - Serviço A
+cd servico-a
+make run
+```
+
+### Executar Testes
+
+```bash
+# Serviço A
+cd servico-a && make test
+
+# Serviço B
+cd servico-b && make test
+```
+
+## 📡 Endpoints da API
+
+### Serviço A (Porta 8080)
+
+#### `POST /`
+
+Recebe CEP e retorna temperatura
+
+**Request:**
+
+```json
+{
+  "cep": "01310100"
+}
+```
+
+**Response Success (200):**
+
+```json
+{
+  "city": "São Paulo",
+  "temp_C": 23.5,
+  "temp_F": 74.3,
+  "temp_K": 296.65
+}
+```
+
+**Response Error (422):**
+
+```json
+{
+  "message": "invalid zipcode"
+}
+```
+
+#### `GET /health`
+
+Health check do serviço
+
+### Serviço B (Porta 8081)
+
+#### `POST /temperature`
+
+Processa CEP e busca temperatura
+
+#### `GET /health`
+
+Health check do serviço
+
+## 🧪 Casos de Teste
+
+```bash
+# CEP válido
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{"cep": "01310100"}'
+
+# CEP inválido (formato)
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{"cep": "123"}'
+
+# CEP não encontrado
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{"cep": "99999999"}'
+
+# Health checks
+curl http://localhost:8080/health
+curl http://localhost:8081/health
+```
+
+## 🔍 Códigos de Resposta
+
+| Código | Descrição |
+|--------|-----------|
+| 200    | Sucesso - temperatura encontrada |
+| 400    | Bad Request - JSON malformado |
+| 404    | CEP não encontrado |
+| 405    | Método não permitido |
+| 422    | CEP com formato inválido |
+| 500    | Erro interno do servidor |
+
+## 🌡️ Conversões de Temperatura
+
+- **Celsius**: Valor original da WeatherAPI
+- **Fahrenheit**: F = C × 1.8 + 32
+- **Kelvin**: K = C + 273.15
+
+## 🛠️ Comandos Úteis
+
+```bash
+# Parar todos os serviços
+docker-compose down
+
+# Rebuild completo
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
+
+# Ver logs
+docker-compose logs -f servico-a
+docker-compose logs -f servico-b
+
+# Escalar serviços
+docker-compose up --scale servico-a=2
+```
+
+## 🔧 Configuração Avançada
+
+### Variáveis de Ambiente
+
+| Variável | Serviço | Descrição | Padrão |
+|----------|---------|-----------|--------|
+| `WEATHER_API_KEY` | B | Chave WeatherAPI (obrigatória) | - |
+| `SERVICE_B_URL` | A | URL do Serviço B | `http://localhost:8081` |
+| `VIACEP_URL` | B | URL da ViaCEP | `https://viacep.com.br/ws` |
+| `WEATHER_API_URL` | B | URL da WeatherAPI | `http://api.weatherapi.com/v1` |
+
+### Portas Customizadas
+
+```bash
+# docker-compose.override.yml
+version: '3.8'
+services:
+  servico-a:
+    ports:
+      - "9000:8080"
+  servico-b:
+    ports:
+      - "9001:8081"
+```
+
+## 🐛 Troubleshooting
+
+### Erro: "WEATHER_API_KEY é obrigatória"
+
+- Verifique se a chave está no arquivo `.env`
+- Confirme se a chave é válida no WeatherAPI
+
+### Erro: "can not find zipcode"
+
+- CEP pode não existir na base ViaCEP
+- Teste com CEPs conhecidos (01310100, 20040020)
+
+### Serviços não se comunicam
+
+- Verifique se estão na mesma rede Docker
+- Confirme URLs de comunicação entre serviços
+
+## 📚 Próximos Passos
+
+- [ ] Implementação OpenTelemetry
+- [ ] Integração Zipkin
+- [ ] Métricas Prometheus
+- [ ] Cache Redis
+- [ ] Rate Limiting
+- [ ] Circuit Breaker
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Implemente testes
+4. Submeta um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
