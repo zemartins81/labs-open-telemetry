@@ -5,57 +5,42 @@ services:
     build:
       context: ./servico-a
       dockerfile: Dockerfile
-    container_name: sistema-cep-servico-a
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
-      - SERVICO_B_URL=http://servico-b:8081
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-      - OTEL_SERVICE_NAME=servico-a
-      - OTEL_SERVICE_VERSION=1.0.0
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=servico-a,service.version=1.0.0
+      - SERVICE_B_URL=http://servico-b:8081
     depends_on:
       - servico-b
-      - otel-collector
     networks:
-      - sistema-cep-network
+      - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
 
   servico-b:
     build:
       context: ./servico-b
       dockerfile: Dockerfile
-    container_name: sistema-cep-servico-b
     ports:
       - "8081:8081"
     environment:
       - PORT=8081
-      - VIACEP_API_URL=https://viacep.com.br/ws
-      - WEATHER_API_URL=http://api.weatherapi.com/v1/current.json
       - WEATHER_API_KEY=${WEATHER_API_KEY}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-      - OTEL_SERVICE_NAME=servico-b
-      - OTEL_SERVICE_VERSION=1.0.0
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=servico-b,service.version=1.0.0
-    depends_on:
-      - otel-collector
+      - VIACEP_URL=https://viacep.com.br/ws
+      - WEATHER_API_URL=http://api.weatherapi.com/v1
     networks:
-      - sistema-cep-network
+      - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
 
 networks:
-  sistema-cep-network:
+  app-network:
     driver: bridge

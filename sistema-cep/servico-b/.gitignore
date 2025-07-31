@@ -1,0 +1,48 @@
+# Binários
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Arquivos de teste
+*.test
+coverage.out
+coverage.html
+
+# Arquivos de dependência
+vendor/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.example
+
+# Chaves de API (segurança)
+*api_key*
+*API_KEY*
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Arquivos de build do Go
+go.sum
