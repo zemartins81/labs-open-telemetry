@@ -3,7 +3,6 @@ Objetivo: Desenvolver um sistema em Go que receba um CEP, identifica a cidade e 
 Basedo no cenário conhecido "Sistema de temperatura por CEP" denominado Serviço B, será incluso um novo projeto, denominado Serviço A.
 
 
-
 Requisitos - Serviço A (responsável pelo input):
 
 O sistema deve receber um input de 8 dígitos via POST, através do schema:  { "cep": "29902555" }
@@ -12,6 +11,8 @@ Caso seja válido, será encaminhado para o Serviço B via HTTP
 Caso não seja válido, deve retornar:
 Código HTTP: 422
 Mensagem: invalid zipcode
+
+
 Requisitos - Serviço B (responsável pela orquestração):
 
 O sistema deve receber um CEP válido de 8 digitos
@@ -23,7 +24,7 @@ Response Body: { "city: "São Paulo", "temp_C": 28.5, "temp_F": 28.5, "temp_K": 
 Em caso de falha, caso o CEP não seja válido (com formato correto):
 Código HTTP: 422
 Mensagem: invalid zipcode
-​​​Em caso de falha, caso o CEP não seja encontrado:
+Em caso de falha, caso o CEP não seja encontrado:
 Código HTTP: 404
 Mensagem: can not find zipcode
 Após a implementação dos serviços, adicione a implementação do OTEL + Zipkin:
