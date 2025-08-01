@@ -42,8 +42,8 @@ func (w *WeatherService) GetTemperatureByLocation(ctx context.Context, location 
 	ctx, span := tracer.Start(ctx, "WeatherAPI.GetTemperatureByLocation")
 	defer span.End()
 
-	// Constrói a query de localização
-	query := fmt.Sprintf("%s,%s", location.City, location.State)
+	// Constrói a query de localização - usa apenas a cidade para evitar problemas de encoding
+	query := location.City
 
 	span.SetAttributes(
 		attribute.String("weather.query", query),
@@ -55,7 +55,7 @@ func (w *WeatherService) GetTemperatureByLocation(ctx context.Context, location 
 	apiURL := fmt.Sprintf("%s/current.json", w.baseURL)
 	params := url.Values{}
 	params.Add("key", w.apiKey)
-	params.Add("q", query)
+	params.Add("q", query) // url.Values.Add já faz o encoding automático
 	params.Add("aqi", "no") // Não precisamos de dados de qualidade do ar
 
 	fullURL := fmt.Sprintf("%s?%s", apiURL, params.Encode())
