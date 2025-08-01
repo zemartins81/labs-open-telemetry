@@ -29,7 +29,7 @@ Sistema distribuído em Go composto por dois microserviços que fornecem informa
 
 ### Pré-requisitos
 
-1. **Go 1.21+** (para desenvolvimento local)
+1. **Go 1.24+** (para desenvolvimento local)
 2. **Docker & Docker Compose** (recomendado)
 3. **Chave WeatherAPI** (gratuita)
 

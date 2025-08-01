@@ -10,8 +10,10 @@ services:
     environment:
       - PORT=8080
       - SERVICE_B_URL=http://servico-b:8081
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - servico-b
+      - zipkin
     networks:
       - app-network
     restart: unless-stopped
@@ -32,11 +34,25 @@ services:
       - WEATHER_API_KEY=${WEATHER_API_KEY}
       - VIACEP_URL=https://viacep.com.br/ws
       - WEATHER_API_URL=http://api.weatherapi.com/v1
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9411/health"]
       interval: 30s
       timeout: 10s
       retries: 3

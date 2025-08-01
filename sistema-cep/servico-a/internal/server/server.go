@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"servico-a/internal/handlers"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Server representa o servidor HTTP
@@ -23,16 +24,19 @@ func NewServer(port string, cepHandler *handlers.CEPHandler) *Server {
 // Start inicia o servidor HTTP
 func (s *Server) Start() error {
 	// Configura as rotas
-	s.setupRoutes()
+	mux := s.setupRoutes()
 
-	// Inicia o servidor
-	return http.ListenAndServe(":"+s.port, nil)
+	// Inicia o servidor com instrumentação OpenTelemetry
+	handler := otelhttp.NewHandler(mux, "servico-a")
+	return http.ListenAndServe(":"+s.port, handler)
 }
 
 // setupRoutes configura as rotas da aplicação
-func (s *Server) setupRoutes() {
-	http.HandleFunc("/", s.cepHandler.HandleCEP)
-	http.HandleFunc("/health", s.healthCheck)
+func (s *Server) setupRoutes() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.cepHandler.HandleCEP)
+	mux.HandleFunc("/health", s.healthCheck)
+	return mux
 }
 
 // healthCheck endpoint para verificação de saúde da aplicação

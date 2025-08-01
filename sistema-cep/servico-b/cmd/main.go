@@ -7,11 +7,19 @@ import (
 	"servico-b/internal/handlers"
 	"servico-b/internal/server"
 	"servico-b/internal/services"
+	"servico-b/internal/telemetry"
 )
 
 func main() {
 	// Carrega configuração
 	cfg := config.LoadConfig()
+
+	// Inicializa telemetria
+	shutdown, err := telemetry.InitTracer("servico-b")
+	if err != nil {
+		log.Fatal("Erro ao inicializar telemetria: ", err)
+	}
+	defer shutdown()
 
 	// Valida configuração crítica
 	if cfg.WeatherAPIKey == "" {
@@ -29,7 +37,7 @@ func main() {
 	// Inicializa servidor
 	srv := server.NewServer(cfg.Port, temperatureHandler)
 
-	log.Printf("Serviço B iniciado na porta %s", cfg.Port)
+	log.Printf("Serviço B iniciado na porta %s com tracing habilitado", cfg.Port)
 	log.Printf("Usando WeatherAPI com chave: %s...", cfg.WeatherAPIKey[:min(len(cfg.WeatherAPIKey), 8)])
 
 	// Inicia o servidor
