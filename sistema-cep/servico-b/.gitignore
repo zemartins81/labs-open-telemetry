@@ -44,5 +44,3 @@ vendor/
 Thumbs.db
 ehthumbs.db
 
-# Arquivos de build do Go
-go.sum

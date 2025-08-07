@@ -7,14 +7,14 @@ RUN apk add --no-cache git ca-certificates
 # Define diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos go.mod e go.sum (se existir)
-COPY go.mod go.sum* ./
-
-# Baixa as dependências
-RUN go mod download
+# Copia o go.mod eo go.sum
+COPY go.mod go.sum ./
 
 # Copia o código fonte
 COPY . .
+
+# Gera o go.sum e baixa as dependências
+RUN go mod tidy && go mod download
 
 # Compila a aplicação
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd
