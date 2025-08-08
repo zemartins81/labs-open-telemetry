@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"servico-b/internal/models"
+
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -40,7 +41,7 @@ func (v *ViaCEPService) GetLocationByCEP(ctx context.Context, cep string) (*mode
 	defer span.End()
 
 	url := fmt.Sprintf("%s/%s/json/", v.baseURL, cep)
-	
+
 	span.SetAttributes(
 		attribute.String("viacep.cep", cep),
 		attribute.String("viacep.url", url),
@@ -81,7 +82,7 @@ func (v *ViaCEPService) GetLocationByCEP(ctx context.Context, cep string) (*mode
 	}
 
 	// Verifica se o CEP foi encontrado
-	if viaCEPResp.Erro {
+	if viaCEPResp.Erro.Bool() {
 		log.Printf("CEP %s não encontrado na ViaCEP", cep)
 		span.SetAttributes(attribute.Bool("viacep.found", false))
 		span.SetStatus(codes.Error, "CEP not found")

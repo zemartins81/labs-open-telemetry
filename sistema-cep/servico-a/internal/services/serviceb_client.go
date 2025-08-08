@@ -84,6 +84,10 @@ func (s *ServiceBClient) ForwardCEPRequest(ctx context.Context, cepReq models.CE
 		return nil, fmt.Errorf("erro ao ler resposta do Serviço B: %w", err)
 	}
 
+	if resp.StatusCode == 422 {
+		
+	}
+
 	span.SetAttributes(attribute.Int("response.body_size", len(body)))
 	log.Printf("Resposta do Serviço B - Status: %d, Body: %s", resp.StatusCode, string(body))
 
